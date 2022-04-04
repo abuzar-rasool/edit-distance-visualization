@@ -204,7 +204,7 @@ class _EditDistanceTableState extends State<EditDistanceTable> {
                           setState(() {});
                         }
                       },
-                      child: const Text('Calculate'))
+                      child: const Text('Visualize'))
                 ],
               ),
               SizedBox(
