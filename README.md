@@ -1,6 +1,6 @@
-# edit_distance_visualization
+# Visualize the edit distance dp matrix 
 
-A new Flutter project.
+This project is a simple web app that takes two Strings S1 and S2 and finds the minimum edit distance via dynamic programming by also visualizaing the matrix required to solve the problem.
 
 ## Getting Started
 
