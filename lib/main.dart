@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -6,110 +8,287 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
-
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: Scaffold(
+        body: Center(
+            child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: Column(
+              children: [
+                Text('Edit Distance Visualization', style: Theme.of(context).textTheme.headline6),
+                SizedBox(height: 10),
+                const EditDistanceTable('spartan', 'part'),
+              ],
+            ),
+          ),
+        )),
+      ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class EditDistanceTable extends StatefulWidget {
+  final String s1;
+  final String s2;
+  const EditDistanceTable(this.s1, this.s2, {Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<EditDistanceTable> createState() => _EditDistanceTableState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _EditDistanceTableState extends State<EditDistanceTable> {
+  late String s1;
+  late String s2;
+  late EditDistanceCalculator calculator;
+  //form key
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  List<TableRow> rows = [];
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    s1 = widget.s1;
+    s2 = widget.s2;
+    editDistance(s1, s2);
+    generateTable();
+  }
+
+  editDistance(String s1, String s2) {
+    calculator = EditDistanceCalculator(s1, s2);
+    calculator.calculate();
+  }
+
+  degreesToRand(deg) {
+    return (deg * pi / 180);
+  }
+
+  Widget getIcon(Direction d) {
+    if (d == Direction.up) {
+      return Transform.rotate(angle: degreesToRand(90), child: const Icon(Icons.arrow_back));
+    } else if (d == Direction.left) {
+      return const Icon(Icons.arrow_back);
+    } else {
+      return Transform.rotate(angle: degreesToRand(45), child: const Icon(Icons.arrow_back));
+    }
+  }
+
+  String directionToString(Direction d) {
+    if (d == Direction.up) {
+      return 'up';
+    } else if (d == Direction.left) {
+      return 'left';
+    } else {
+      return 'diag';
+    }
+  }
+
+  void generateTable() {
+    rows = [];
+    for (List<CellData> row in calculator.table) {
+      TableRow tableRow = TableRow(
+        children: row.map((cellData) {
+          return TableCell(
+            child: Container(
+              color: cellData.highlighted ? Colors.grey : null,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        if (cellData.direction != null)
+                          getIcon(cellData.direction!)
+                        else
+                          const SizedBox(
+                            height: 16,
+                            width: 16,
+                          ),
+                        //text of direction
+                        // Text(
+                        //   cellData.direction != null ? directionToString(cellData.direction!) : '',
+                        // ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(cellData.value.toString()),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+      rows.add(tableRow);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    return Form(
+      key: _formKey,
+      child: SizedBox(
+          width: 500,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'String S1',
+                      ),
+                      initialValue: s1,
+                      onChanged: (value) {
+                        s1 = value;
+                      },
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Please enter a string';
+                        }
+                        if (value.length > 9) {
+                          return 'String is too long';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Expanded(
+                    child: TextFormField(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'String S1',
+                      ),
+                      initialValue: s2,
+                      onChanged: (value) {
+                        s2 = value;
+                      },
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Please enter a string';
+                        }
+                        if (value.length > 9) {
+                          return 'String is too long';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  //button
+                  ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          editDistance(s1, s2);
+                          generateTable();
+                          setState(() {});
+                        }
+                      },
+                      child: const Text('Calculate'))
+                ],
+              ),
+              SizedBox(
+                height: 16,
+              ),
+              Table(border: TableBorder.all(color: Colors.black), children: rows),
+            ],
+          )),
     );
+  }
+}
+
+enum Direction {
+  left,
+  up,
+  diagonal,
+}
+
+class CellData {
+  Direction? direction;
+  String value;
+  bool highlighted;
+  CellData({this.direction, this.value = '0', this.highlighted = false});
+}
+
+class EditDistanceCalculator {
+  final String s1;
+  final String s2;
+  final List<List<CellData>> table;
+  EditDistanceCalculator(this.s1, this.s2) : table = List.generate(s1.length + 2, (_) => List.generate(s2.length + 2, (_) => CellData()));
+  calculate() {
+    table[0][0].value = '';
+    table[0][1].value = '-';
+    table[1][0].value = '-';
+    for (int i = 2; i < s1.length + 2; i++) {
+      table[i][0].value = s1[i - 2];
+    }
+    for (int i = 2; i < s2.length + 2; i++) {
+      table[0][i].value = s2[i - 2];
+    }
+    for (int i = 1; i < s2.length + 2; i++) {
+      table[1][i].value = (i - 1).toString();
+    }
+    for (int i = 1; i < s1.length + 2; i++) {
+      table[i][1].value = (i - 1).toString();
+    }
+    for (int i = 2; i < s1.length + 2; i++) {
+      for (int j = 2; j < s2.length + 2; j++) {
+        if (s1[i - 2] == s2[j - 2]) {
+          table[i][j].value = table[i - 1][j - 1].value;
+          table[i][j].direction = Direction.diagonal;
+        } else {
+          final int up = int.parse(table[i - 1][j].value) + 1;
+          final int left = int.parse(table[i][j - 1].value) + 1;
+          final int diagonal = int.parse(table[i - 1][j - 1].value) + 1;
+          table[i][j].value = minOf(left, up, diagonal).toString();
+          if (left == int.parse(table[i][j].value)) {
+            table[i][j].direction = Direction.left;
+          } else if (up == int.parse(table[i][j].value)) {
+            table[i][j].direction = Direction.up;
+          } else {
+            table[i][j].direction = Direction.diagonal;
+          }
+        }
+      }
+    }
+    //mark the highlighted cells by backtracking from last cell
+    int currI = s1.length + 1;
+    int currJ = s2.length + 1;
+    while (currI >= 1 && currJ >= 1) {
+      table[currI][currJ].highlighted = true;
+
+      if (table[currI][currJ].direction == Direction.diagonal) {
+        currI--;
+        currJ--;
+      } else if (table[currI][currJ].direction == Direction.up) {
+        currI--;
+      } else {
+        currJ--;
+      }
+    }
+  }
+
+  int minOf(int a, int b, int c) {
+    return min(a, min(b, c));
   }
 }
